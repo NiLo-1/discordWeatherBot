@@ -28,7 +28,7 @@ status = cycle(["being overworked...", "enjoying life...", "running errands...",
 async def change_status():
     await client.change_presence(activity=discord.Game(next(status)))
 
-@client.event
+@client.event  # error handling
 async def on_command_error(ctx, error):
     if isinstance(error, commands.errors.CommandNotFound):
         embed = discord.Embed(title="Error!", description="Command not found.", color=discord.Color.red())
@@ -44,7 +44,7 @@ async def weather(ctx, *city):
         city_str = " ".join(city)
     else:
         city_str = city[0]
-    URL = "http://api.openweathermap.org/data/2.5/weather?q={}&units=metric&appid=59b64c89ad5f1a4f3b30761d4554198c".format(city_str)
+    URL = "http://api.openweathermap.org/data/2.5/weather?q={}&units=metric&appid={API_KEY}".format(city_str)  # API_KEY is just a placeholder for security, not an actual variable
     res = requests.get(URL)
     data = res.json()
     pprint(data)
