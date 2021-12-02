@@ -21,7 +21,4 @@ jobs:
           echo $RESPONSE
           TOKEN=$(echo -n $RESPONSE | jq -r .access_token)
           echo $TOKEN
-
-        env:
-          DEFAULT_BRANCH: main
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          
