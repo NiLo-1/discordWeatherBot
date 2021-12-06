@@ -11,6 +11,10 @@ jobs:
         uses: actions/checkout@v2
       - name: sbom-upload
         run: |
+          pip3 install cyclonedx-bom
+          pip3 freeze > requirements_frozen.txt
+          cyclonedx-bom -r -i requirements_frozen.txt -o sbom.orig.xml
+          python sbom-patch.py > sbom.xml
           CLIENT_ID="445fe771-7406-4b3d-bd78-5bf32da1e8e4"
           SECRET=${{ secrets.RKVST_SECRET }}
           # use curl to obtain a temporary access token for api access using our client id and secret
