@@ -25,5 +25,5 @@ jobs:
           echo $RESPONSE
           TOKEN=$(echo -n $RESPONSE | jq -r .access_token)
           echo $TOKEN
-          curl -X POST -H "Authorization: Bearer $TOKEN" -F "sbom=@sbom.xml" "https://sbom.rkvst.io/archivist/v1/sboms?privacy=false"
+          curl -X POST -H "Authorization: Bearer $TOKEN" -F "sbom=@sbom.xml" "https://sbom.rkvst.io/archivist/v1/sboms?privacy=PUBLIC"
           
