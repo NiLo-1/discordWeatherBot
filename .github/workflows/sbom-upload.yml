@@ -9,14 +9,19 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-      - name: sbom-upload
+      - name: Create SBOM
         run: |
           pip3 install cyclonedx-bom
           pip3 freeze > requirements_frozen.txt
           cyclonedx-bom -r -i requirements_frozen.txt -o sbom.orig.xml
           python sbom-patch.py > sbom.xml
-          # xmllint "sbom.xml" --schema cyclonedx-wrapper.xsd --noout 2>&1 | grep -Fv "Skipping import of schema located at 'http://cyclonedx.org/schema/spdx' for the namespace 'http://cyclonedx.org/schema/spdx'"
-          xmllint "sbom.xml" --schema cyclonedx-wrapper.xsd
+      - name: Validate SBOM
+        uses: ChristophWurst/xmllint-action@v1
+        with:
+          xml-file: ./sbom.xml
+          xml-schema-file: ./cyclonedx-wrapper.xsd
+      - name: SBOM Upload
+        run: |
           CLIENT_ID="445fe771-7406-4b3d-bd78-5bf32da1e8e4"
           SECRET=${{ secrets.RKVST_SECRET }}
           # use curl to obtain a temporary access token for api access using our client id and secret
