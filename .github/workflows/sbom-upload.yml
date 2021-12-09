@@ -15,6 +15,7 @@ jobs:
           pip3 freeze > requirements_frozen.txt
           cyclonedx-bom -r -i requirements_frozen.txt -o sbom.orig.xml --schema-version 1.2
           python sbom-patch.py > sbom.xml
+          cat sbom.xml
       - name: Validate SBOM
         uses: ChristophWurst/xmllint-action@v1
         with:
