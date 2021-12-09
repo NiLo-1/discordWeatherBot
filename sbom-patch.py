@@ -4,7 +4,7 @@ import os, sys
 import xml.etree.ElementTree as ET
 import hashlib
 
-CYCLONEDX_BOM_NS='http://cyclonedx.org/schema/bom/1.3'
+CYCLONEDX_BOM_NS='http://cyclonedx.org/schema/bom/1.2'
 
 AUTHOR_NAME="Nile Kelly"
 AUTHOR_EMAIL="nilekell@gmail.com"
