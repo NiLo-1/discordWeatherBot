@@ -1,65 +1,58 @@
-# v4 update - TOKEN is now stored in external file
-
-
 import requests
 import pprint
 from pprint import pprint
-import typing
 import discord
-from discord.ext import commands, tasks
+from discord.ext import commands
 from discord.ext.commands import CommandNotFound, MissingRequiredArgument
+from discord.ui import Button, View
 from discord.commands import Option
-from itertools import cycle
 from datetime import datetime
-import time
-import pytz
 
-# initialising bot
-client = commands.Bot()
 
-# Accessing token securely from an external file
+# initialising bot with a custom status
+client = commands.Bot(activity=discord.Activity(type=discord.ActivityType.watching, name="the sky"))
+
+# accessing token securely from an external file
 t_file = open("TOKEN.txt", "r")
 TOKEN = t_file.readline()
 
-# Accessing api key securely from an external file
+# accessing api key securely from an external file
 key_file = open("APIKEY.txt", "r")
 API_KEY = key_file.readline()
 
-
+# sends a message when bot is connected to Discord
 @client.event
 async def on_ready():
     print("Bot is ready")
-    change_status.start()
-
-status = cycle(["being overworked...", "enjoying life...", "running errands...",
-                "skipping my break...", "barely staying afloat...", "wasting time", "fetching weather data"])
 
 
-@tasks.loop(seconds=10)
-async def change_status():
-    await client.change_presence(activity=discord.Game(next(status)))  # displays bot status inside Discord
-
-
+# handles invalid user inputs
 @client.event
 async def on_command_error(ctx, error):
+    # returns error message when user sends an unrecognised command
     if isinstance(error, commands.errors.CommandNotFound):
         embed = discord.Embed(title="Error!", description="Command not found.", color=discord.Color.red())
         await ctx.send(embed=embed)
+    # returns error message when user sends a command with missing arguments
     elif isinstance(error, commands.errors.MissingRequiredArgument):
         embed = discord.Embed(title="Error!", description="Command missing city argument.", color=discord.Color.red())
         await ctx.send(embed=embed)
 
 
-@client.slash_command(description="Returns current weather data", guild_ids=[869177161012109322])
+# current weather command
+# adds slash command to bot's internal command list
+@client.slash_command(description="Returns current weather info for a given city", guild_ids=[869177161012109322])
 async def weather(
+    # allows use of context data of the message
     ctx: discord.ApplicationContext,
+    # declares an argument and states info about the slash command
     city: Option(str, "Enter a city/state"),
 ):
     global API_KEY
-    url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&units=metric&appid={API_KEY}"
     # making request to API for current weather data about city
-    res = requests.get(url)
+    url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&units=metric&appid={API_KEY}"
     # returns json object of requested data
+    res = requests.get(url)
     data = res.json()
     # checking if access to API is working
     if data["cod"] != "404":
@@ -90,28 +83,141 @@ async def weather(
         await ctx.respond(embed=embed)
 
     else:
+        #
         embed = discord.Embed(title="This city cannot be found", color=discord.Color.red())
         await ctx.respond(embed=embed)
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-# runs the program on the bot        
+
+
+@client.slash_command(description="Returns forecast weather info for a given city ", guild_ids=[869177161012109322])
+async def forecast(
+    ctx: discord.ApplicationContext,
+    city: Option(str, "Enter a city/state"),
+):
+    global API_KEY
+    url = f"http://api.openweathermap.org/data/2.5/forecast?q={city}&appid={API_KEY}"
+    res = requests.get(url)
+    data = res.json()
+    if data["cod"] != "404":
+        # storing relevant forecast data from each day
+        country = data["city"]["country"]
+        city = data["city"]["name"]
+
+        # order of data item in each list: datetime, temp_max, temp_min, description, weather icon
+        firstDay = [data["list"][0]["dt_txt"], data["list"][0]["main"]["temp_max"] - 273.15,
+                    data["list"][0]["main"]["temp_min"] - 273.15,
+                    data["list"][0]["weather"][0]["description"], data["list"][0]["weather"][0]["icon"]]
+        firstDayDate = firstDay[0][:10]
+
+        secondDay = [data["list"][7]["dt_txt"], data["list"][7]["main"]["temp_max"] - 273.15,
+                     data["list"][7]["main"]["temp_min"] - 273.15,
+                     data["list"][7]["weather"][0]["description"], data["list"][7]["weather"][0]["icon"]]
+        secondDayDate = secondDay[0][:10]
+
+
+        thirdDay = [data["list"][14]["dt_txt"], data["list"][14]["main"]["temp_max"] - 273.15,
+                    data["list"][14]["main"]["temp_min"] - 273.15,
+                    data["list"][14]["weather"][0]["description"], data["list"][14]["weather"][0]["icon"]]
+        thirdDayDate = thirdDay[0][:10]
+
+        fourthDay = [data["list"][21]["dt_txt"], data["list"][21]["main"]["temp_max"] - 273.15,
+                     data["list"][21]["main"]["temp_min"] - 273.15,
+                     data["list"][21]["weather"][0]["description"], data["list"][21]["weather"][0]["icon"]]
+        forthDayDate = fourthDay[0][:10]
+
+        fifthDay = [data["list"][28]["dt_txt"], data["list"][28]["main"]["temp_max"] - 273.15,
+                    data["list"][28]["main"]["temp_min"] - 273.15,
+                    data["list"][28]["weather"][0]["description"], data["list"][28]["weather"][0]["icon"]]
+        fifthDayDate = fifthDay[0][:10]
+
+        # constructing discord embed messages to act as a page showing weather forecast for each day
+        page1 = discord.Embed(title="**" + city + ", " + country + "**", color=discord.Color.blue(), timestamp=datetime.utcnow())
+        page1.add_field(name=firstDayDate, value="--------------", inline=False)
+        page1.add_field(name="Description", value=str(firstDay[3]), inline=False)
+        page1.add_field(name="Max", value=str(int(firstDay[1])) + " °C", inline=False)
+        page1.add_field(name="Min", value=str(int(firstDay[2])) + " °C", inline=False)
+        icon_url = f"http://openweathermap.org/img/wn/{str(firstDay[4])}@2x.png"
+        page1.set_thumbnail(url=icon_url)
+        page1.set_footer(icon_url=ctx.author.avatar.url, text="Requested by " + ctx.author.name)
+
+        page2 = discord.Embed(title="**" + city + ", " + country + "**", color=discord.Color.blue(), timestamp=datetime.utcnow())
+        page2.add_field(name=secondDayDate, value="--------------", inline=False)
+        page2.add_field(name="Description", value=str(secondDay[3]), inline=False)
+        page2.add_field(name="Max", value=str(int(secondDay[1])) + " °C", inline=False)
+        page2.add_field(name="Min", value=str(int(secondDay[2])) + " °C", inline=False)
+        icon_url = f"http://openweathermap.org/img/wn/{str(secondDay[4])}@2x.png"
+        page2.set_thumbnail(url=icon_url)
+        page2.set_footer(icon_url=ctx.author.avatar.url, text="Requested by " + ctx.author.name)
+
+        page3 = discord.Embed(title="**" + city + ", " + country + "**", color=discord.Color.blue(), timestamp=datetime.utcnow())
+        page3.add_field(name=thirdDayDate, value="--------------", inline=False)
+        page3.add_field(name="Description", value=str(thirdDay[3]), inline=False)
+        page3.add_field(name="Max", value=str(int(thirdDay[1])) + " °C", inline=False)
+        page3.add_field(name="Min", value=str(int(thirdDay[2])) + " °C", inline=False)
+        icon_url = f"http://openweathermap.org/img/wn/{str(thirdDay[4])}@2x.png"
+        page3.set_thumbnail(url=icon_url)
+        page3.set_footer(icon_url=ctx.author.avatar.url, text="Requested by " + ctx.author.name)
+
+        page4 = discord.Embed(title="**" + city + ", " + country + "**", color=discord.Color.blue(), timestamp=datetime.utcnow())
+        page4.add_field(name=forthDayDate, value="--------------", inline=False)
+        page4.add_field(name="Description", value=str(fourthDay[3]), inline=False)
+        page4.add_field(name="Max", value=str(int(fourthDay[1])) + " °C", inline=False)
+        page4.add_field(name="Min", value=str(int(fourthDay[2])) + " °C", inline=False)
+        icon_url = f"http://openweathermap.org/img/wn/{str(fourthDay[4])}@2x.png"
+        page4.set_thumbnail(url=icon_url)
+        page4.set_footer(icon_url=ctx.author.avatar.url, text="Requested by " + ctx.author.name)
+
+        page5 = discord.Embed(title="**" + city + ", " + country + "**", color=discord.Color.blue(), timestamp=datetime.utcnow())
+        page5.add_field(name=fifthDayDate, value="--------------", inline=False)
+        page5.add_field(name="Description", value=str(fifthDay[3]), inline=False)
+        page5.add_field(name="Max", value=str(int(fifthDay[1])) + " °C", inline=False)
+        page5.add_field(name="Min", value=str(int(fifthDay[2])) + " °C", inline=False)
+        icon_url = f"http://openweathermap.org/img/wn/{str(fifthDay[4])}@2x.png"
+        page5.set_thumbnail(url=icon_url)
+        page5.set_footer(icon_url=ctx.author.avatar.url, text="Requested by " + ctx.author.name)
+
+        # creating buttons to switch between pages for each day using Discord Button class
+        button2 = Button(label=secondDayDate, style=discord.ButtonStyle.secondary)
+        button3 = Button(label=thirdDayDate, style=discord.ButtonStyle.secondary)
+        button4 = Button(label=forthDayDate, style=discord.ButtonStyle.secondary)
+        button5 = Button(label=fifthDayDate, style=discord.ButtonStyle.secondary)
+
+        # functions that edit the bot response depending on the button pressed
+        async def button2_callback(interaction):
+            await interaction.response.edit_message(embed=page2)
+
+        async def button3_callback(interaction):
+            await interaction.response.edit_message(embed=page3)
+
+        async def button4_callback(interaction):
+            await interaction.response.edit_message(embed=page4)
+
+        async def button5_callback(interaction):
+            await interaction.response.edit_message(embed=page5)
+
+        # assigning each function to callback method of Button class - to edit the response with its respective page
+        button2.callback = button2_callback
+        button3.callback = button3_callback
+        button4.callback = button4_callback
+        button5.callback = button5_callback
+
+        # View() is a class used to create UI objects for Discord such as buttons
+        view = View()
+        # adding buttons to Discord UI object
+        view.add_item(button2)
+        view.add_item(button3)
+        view.add_item(button4)
+        view.add_item(button5)
+        # sending bot response within Discord passing the first page of forecast data and UI objects as parameters
+        await ctx.respond(embed=page1, view=view
+                          
+                          
+                          
+                          
+                          
+                          
+                          
+                          
+                          
+                          
+ # runs the program on the bot
 client.run(TOKEN)
