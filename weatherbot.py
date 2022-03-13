@@ -1,10 +1,9 @@
+
 import requests
 import pprint
 from pprint import pprint
 import discord
-from discord.ext import commands
-from discord.ext.commands import CommandNotFound, MissingRequiredArgument
-from discord.ui import Button, View
+from discord.ext import commands, pages
 from discord.commands import Option
 from datetime import datetime
 
@@ -37,6 +36,7 @@ async def on_command_error(ctx, error):
     elif isinstance(error, commands.errors.MissingRequiredArgument):
         embed = discord.Embed(title="Error!", description="Command missing city argument.", color=discord.Color.red())
         await ctx.send(embed=embed)
+
 
 
 # current weather command
@@ -122,7 +122,7 @@ async def forecast(
         fourthDay = [data["list"][21]["dt_txt"], data["list"][21]["main"]["temp_max"] - 273.15,
                      data["list"][21]["main"]["temp_min"] - 273.15,
                      data["list"][21]["weather"][0]["description"], data["list"][21]["weather"][0]["icon"]]
-        forthDayDate = fourthDay[0][:10]
+        fourthDayDate = fourthDay[0][:10]
 
         fifthDay = [data["list"][28]["dt_txt"], data["list"][28]["main"]["temp_max"] - 273.15,
                     data["list"][28]["main"]["temp_min"] - 273.15,
@@ -158,7 +158,7 @@ async def forecast(
         page3.set_footer(icon_url=ctx.author.avatar.url, text="Requested by " + ctx.author.name)
 
         page4 = discord.Embed(title="**" + city + ", " + country + "**", color=discord.Color.blue(), timestamp=datetime.utcnow())
-        page4.add_field(name=forthDayDate, value="--------------", inline=False)
+        page4.add_field(name=fourthDayDate, value="--------------", inline=False)
         page4.add_field(name="Description", value=str(fourthDay[3]), inline=False)
         page4.add_field(name="Max", value=str(int(fourthDay[1])) + " °C", inline=False)
         page4.add_field(name="Min", value=str(int(fourthDay[2])) + " °C", inline=False)
@@ -175,40 +175,16 @@ async def forecast(
         page5.set_thumbnail(url=icon_url)
         page5.set_footer(icon_url=ctx.author.avatar.url, text="Requested by " + ctx.author.name)
 
-        # creating buttons to switch between pages for each day using Discord Button class
-        button2 = Button(label=secondDayDate, style=discord.ButtonStyle.secondary)
-        button3 = Button(label=thirdDayDate, style=discord.ButtonStyle.secondary)
-        button4 = Button(label=forthDayDate, style=discord.ButtonStyle.secondary)
-        button5 = Button(label=fifthDayDate, style=discord.ButtonStyle.secondary)
+        # creating a list of pages for paginator to cycle through
+        allpages = [page1, page2, page3, page4, page5]
 
-        # functions that edit the bot response depending on the button pressed
-        async def button2_callback(interaction):
-            await interaction.response.edit_message(embed=page2)
+        # using paginator class to create a message with buttons to navigate through pages
+        paginator = pages.Paginator(allpages, use_default_buttons=True, timeout=180.0)
+        await paginator.respond(ctx.interaction)
 
-        async def button3_callback(interaction):
-            await interaction.response.edit_message(embed=page3)
-
-        async def button4_callback(interaction):
-            await interaction.response.edit_message(embed=page4)
-
-        async def button5_callback(interaction):
-            await interaction.response.edit_message(embed=page5)
-
-        # assigning each function to callback method of Button class - to edit the response with its respective page
-        button2.callback = button2_callback
-        button3.callback = button3_callback
-        button4.callback = button4_callback
-        button5.callback = button5_callback
-
-        # View() is a class used to create UI objects for Discord such as buttons
-        view = View()
-        # adding buttons to Discord UI object
-        view.add_item(button2)
-        view.add_item(button3)
-        view.add_item(button4)
-        view.add_item(button5)
-        # sending bot response within Discord passing the first page of forecast data and UI objects as parameters
-        await ctx.respond(embed=page1, view=view
+    else:
+        embed = discord.Embed(title="Error!", description="Unrecognised argument/s.", color=discord.Color.red())
+        await ctx.respond(embed=embed)
                           
                           
                           
