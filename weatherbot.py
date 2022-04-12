@@ -366,8 +366,8 @@ async def graph(
             plt.title(graph_title)
 
             n = random.randint(1, 1000)   # lets say the function returns the random number 5, therefore n = 5
-            # so the path will be C:\Users\nilee\PycharmProjects\Python Discord Bot\venv\temperature-image5.png
-            file_path = os.path.abspath(fr"C:\Users\nilee\PycharmProjects\Python Discord Bot\weather-graphs\{image_type}-image{n}.png")
+            # so the path will be C:\path\to\file\temperature-image5.png
+            file_path = os.path.abspath(fr"C:\path\to\file\{image_type}-image{n}.png")
 
             # file is saved to current project directory
             plt.savefig(file_path)
