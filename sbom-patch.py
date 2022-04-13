@@ -28,7 +28,7 @@ def hash256file(filename):
 
 TOOL_HASH_CONTENT=hash256file(__file__)
 COMPONENT_HASH_CONTENT=os.environ.get(
-    "GITHUB_SHA", hash256file("weatherbot-v3.py"))
+    "GITHUB_SHA", hash256file("weatherbot.py"))
 
 PRIVACY="PUBLIC"
 OUTPUT="sbom.orig.xml"
